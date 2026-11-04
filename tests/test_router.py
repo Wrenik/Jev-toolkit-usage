@@ -196,7 +196,7 @@ def raw_request(url, data: bytes, headers: dict):
 
     u = urlparse(url)
     s = socket.create_connection((u.hostname, u.port), timeout=3)
-    lines = [f"POST /route HTTP/1.1", f"Host: 127.0.0.1:{u.port}"] + [f"{k}: {v}" for k, v in headers.items()]
+    lines = ["POST /route HTTP/1.1", f"Host: 127.0.0.1:{u.port}"] + [f"{k}: {v}" for k, v in headers.items()]
     s.sendall(("\r\n".join(lines) + "\r\n\r\n").encode() + data)
     try:
         return s.recv(200).split(b"\r\n", 1)[0]

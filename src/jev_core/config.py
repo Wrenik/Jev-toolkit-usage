@@ -77,8 +77,15 @@ def _parse(path: Path) -> dict[str, str]:
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
+        if line.startswith("export "):  # `export KEY=value` is a common shell-style .env line
+            line = line[len("export "):].lstrip()
         key, _, value = line.partition("=")
-        values[key.strip()] = value.strip().strip("'\"")
+        value = value.strip()
+        if value[:1] in ("'", '"') and value.count(value[0]) >= 2:
+            value = value[1 : value.index(value[0], 1)]  # quoted: ignore anything after the closing quote
+        else:
+            value = value.split(" #", 1)[0].strip()  # unquoted: a trailing ` # comment` is not part of the value
+        values[key.strip()] = value
     return values
 
 

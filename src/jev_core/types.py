@@ -94,6 +94,25 @@ class Verdict:
     def __getitem__(self, name: str) -> Answer:
         return self.answers[name]
 
+    # Typed accessors: the answer to a question you asked, narrowed to its type for type checkers.
+    def yes_no(self, name: str) -> YesNoAnswer:
+        answer = self.answers[name]
+        if not isinstance(answer, YesNoAnswer):
+            raise TypeError(f"{name!r} is not a yes/no answer")
+        return answer
+
+    def pick(self, name: str) -> PickAnswer:
+        answer = self.answers[name]
+        if not isinstance(answer, PickAnswer):
+            raise TypeError(f"{name!r} is not a pick answer")
+        return answer
+
+    def rate(self, name: str) -> RateAnswer:
+        answer = self.answers[name]
+        if not isinstance(answer, RateAnswer):
+            raise TypeError(f"{name!r} is not a rate answer")
+        return answer
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "answers": {k: {"type": _TYPE_NAMES[type(a)], **asdict(a)} for k, a in self.answers.items()},

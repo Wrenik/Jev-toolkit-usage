@@ -12,3 +12,7 @@ claude-mod/*/.claude-plugin/types/
 spikes/
 *.pyc
 node_modules/
+build/
+dist/
+.ruff_cache/
+.mypy_cache/

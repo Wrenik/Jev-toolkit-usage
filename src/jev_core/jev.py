@@ -97,7 +97,7 @@ class JevJudge:
         return Verdict(
             answers=answers,
             model=response.model,
-            input_tokens=response.usage.input_tokens,
+            input_tokens=response.usage.input_tokens or 0,
             latency_ms=latency_ms,
             # The SDK's `request_id` property raises when the header is missing.
             extra={"request_id": response.__dict__.get("_request_id")},
@@ -107,7 +107,7 @@ class JevJudge:
 def _to_sdk(q: Question) -> Any:
     if isinstance(q, YesNo):
         criteria = {"true": q.yes, "false": q.no} if (q.yes or q.no) else None
-        return ts.Noul(instructions=q.instructions, criteria=criteria)
+        return ts.Noul(instructions=q.instructions, criteria=criteria)  # type: ignore[arg-type]
     if isinstance(q, Pick):
         return ts.Choice(instructions=q.instructions, criteria=dict(q.options))
     if isinstance(q, Rate):

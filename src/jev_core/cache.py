@@ -38,23 +38,37 @@ class CachingJudge:
         # so sqlite's same-thread check is off and a lock serialises access.
         self._db = sqlite3.connect(":memory:" if path is None else str(path), check_same_thread=False)
         self._lock = threading.Lock()
-        with self._lock:
-            self._db.execute("CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, verdict TEXT, created REAL)")
+        try:
+            with self._lock:
+                self._db.execute("CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, verdict TEXT, created REAL)")
+        except sqlite3.DatabaseError:
+            # Not a database (corrupt or foreign file): fall back to a memory cache for this process.
+            self._db.close()
+            self._db = sqlite3.connect(":memory:", check_same_thread=False)
+            self._db.execute("CREATE TABLE cache (key TEXT PRIMARY KEY, verdict TEXT, created REAL)")
 
     def ask(self, state: State, questions: Mapping[str, Question]) -> Verdict:
         key = cache_key(self.inner, state, questions)
-        with self._lock:
-            row = self._db.execute("SELECT verdict, created FROM cache WHERE key = ?", (key,)).fetchone()
-        if row and (self.max_age_s is None or time.time() - row[1] <= self.max_age_s):
-            return Verdict.from_dict(json.loads(row[0]), cached=True)
+        # The cache is an optimisation: a locked, corrupt or read-only database (two processes sharing
+        # the file, a bad disk) must never turn a working judge into a failing one.
+        try:
+            with self._lock:
+                row = self._db.execute("SELECT verdict, created FROM cache WHERE key = ?", (key,)).fetchone()
+            if row and (self.max_age_s is None or time.time() - row[1] <= self.max_age_s):
+                return Verdict.from_dict(json.loads(row[0]), cached=True)
+        except (sqlite3.Error, ValueError, KeyError, TypeError):
+            pass
 
         # The judge call itself runs outside the lock so slow calls don't queue up.
         verdict = self.inner.ask(state, questions)
-        with self._lock, self._db:
-            self._db.execute(
-                "INSERT OR REPLACE INTO cache VALUES (?, ?, ?)",
-                (key, json.dumps(verdict.to_dict()), time.time()),
-            )
+        try:
+            with self._lock, self._db:
+                self._db.execute(
+                    "INSERT OR REPLACE INTO cache VALUES (?, ?, ?)",
+                    (key, json.dumps(verdict.to_dict()), time.time()),
+                )
+        except sqlite3.Error:
+            pass
         return verdict
 
     def close(self) -> None:

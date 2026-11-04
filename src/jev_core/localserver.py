@@ -43,7 +43,7 @@ class GuardedHandler(BaseHTTPRequestHandler):
         if self.headers.get(self.HEADER) != "1":
             self._send(403, {"ok": False, "error": f"missing {self.HEADER} header"})
             return False
-        port = self.server.server_address[1]
+        port = int(self.server.server_address[1])  # type: ignore[index]
         if self.headers.get("Host") not in (f"127.0.0.1:{port}", f"localhost:{port}"):
             self._send(403, {"ok": False, "error": "wrong Host header"})
             return False

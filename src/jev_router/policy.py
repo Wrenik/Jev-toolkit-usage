@@ -10,7 +10,7 @@ import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from jev_core import Judge, Pick, Rate, Verdict, YesNo
+from jev_core import Judge, Pick, Question, Rate, Verdict, YesNo
 
 TIERS = ("light", "standard", "heavy")
 
@@ -23,7 +23,7 @@ DEFAULT_TIER_MODELS: dict[str, dict[str, str]] = {
 
 COMPLEXITY_LEVELS = ["trivial", "small", "medium", "large", "very large"]
 
-QUESTIONS = {
+QUESTIONS: dict[str, Question] = {
     "complexity": Rate(
         "How much work does this request to a coding assistant need?",
         COMPLEXITY_LEVELS,
@@ -76,14 +76,14 @@ class Decision:
 
 def signals_of(v: Verdict) -> dict[str, float]:
     return {
-        "complexity": round(v["complexity"].score, 3),
-        "complexity_conf": round(v["complexity"].confidence, 3),
-        "deep": round(v["deep"].p_yes, 3),
-        "mechanical": round(v["mechanical"].p_yes, 3),
-        "followup": round(v["followup"].p_yes, 3),
-        "coding": round(v["coding"].p_yes, 3),
-        "multi_file": round(v["multi_file"].p_yes, 3),
-        "risk_high": round(v["risk"].probabilities.get("high", 0.0), 3),
+        "complexity": round(v.rate("complexity").score, 3),
+        "complexity_conf": round(v.rate("complexity").confidence, 3),
+        "deep": round(v.yes_no("deep").p_yes, 3),
+        "mechanical": round(v.yes_no("mechanical").p_yes, 3),
+        "followup": round(v.yes_no("followup").p_yes, 3),
+        "coding": round(v.yes_no("coding").p_yes, 3),
+        "multi_file": round(v.yes_no("multi_file").p_yes, 3),
+        "risk_high": round(v.pick("risk").probabilities.get("high", 0.0), 3),
     }
 
 
@@ -149,7 +149,7 @@ _TIER_BY_FAMILY = {target["model"]: tier for tier, target in DEFAULT_TIER_MODELS
 
 
 def tier_of_model(model: str | None) -> str | None:
-    match = _MANAGED_MODEL.match((model or "").strip().lower())
+    match = _MANAGED_MODEL.match(model.strip().lower()) if isinstance(model, str) else None
     return _TIER_BY_FAMILY.get(match.group(1)) if match else None
 
 
@@ -183,6 +183,8 @@ def route(
     s = signals_of(verdict)
     tier, reason = choose_tier(s, previous_tier)
     managed = tier_of_model(current_model)
+    if not isinstance(current_model, str) or not current_model.strip():
+        current_model = None  # missing, blank or malformed (from the mod) means "unknown", not "unmanaged"
     manages_current = current_model is None or managed is not None
     tier, reason = guard_step_down(tier, reason, managed or previous_tier, context_tokens, idle_ms)
     if tier == "light" and context_tokens is not None and context_tokens > LIGHT_MAX_CONTEXT_TOKENS:

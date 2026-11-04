@@ -38,13 +38,13 @@ def ask_together(judge: Judge, parts: Mapping[str, tuple[State, Mapping[str, Que
 
     states = [s for s, _ in parts.values()]
     same_state = all(s == states[0] for s in states[1:])
-    state: State = states[0] if same_state else {tool: s for tool, (s, _) in parts.items()}
+    shared: State = states[0] if same_state else {tool: s for tool, (s, _) in parts.items()}
     questions = {
         f"{tool}{SEP}{name}": _scoped(tool, q, not same_state)
         for tool, (_, qs) in parts.items()
         for name, q in qs.items()
     }
-    joint = judge.ask(state, questions)
+    joint = judge.ask(shared, questions)
     tools = list(parts)
     out: dict[str, Verdict] = {}
     for i, tool in enumerate(tools):

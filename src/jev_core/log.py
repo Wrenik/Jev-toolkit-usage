@@ -60,5 +60,8 @@ class LoggingJudge:
 
     def _write(self, record: dict[str, Any]) -> None:
         line = json.dumps(record, ensure_ascii=False) + "\n"
-        with self._lock, self.path.open("a", encoding="utf-8") as f:
-            f.write(line)
+        try:
+            with self._lock, self.path.open("a", encoding="utf-8") as f:
+                f.write(line)
+        except OSError:
+            pass  # a full disk or a locked file must not lose a verdict that was already paid for

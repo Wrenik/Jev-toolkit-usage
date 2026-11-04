@@ -1,9 +1,12 @@
 {
   "name": "jev-router",
-  "version": "0.3.0",
+  "version": "0.1.0",
   "description": "Asks a judgement model (TypeSafe Jev) how big each prompt is and picks the Claude model and effort for it.",
   "author": { "name": "Henric" },
   "license": "MIT",
+  "homepage": "https://github.com/Wrenik/Jev-toolkit-usage",
+  "repository": "https://github.com/Wrenik/Jev-toolkit-usage",
+  "keywords": ["router", "model-selection", "judge", "jev"],
   "userConfig": {
     "python": {
       "type": "string",

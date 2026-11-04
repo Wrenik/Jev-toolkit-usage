@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Jev-toolkit-usage: a judgement-model layer and Claude Code router"
+type: software
+license: MIT
+authors:
+  - family-names: "Ährlund"
+    given-names: "Eric"
+repository-code: "https://github.com/Wrenik/Jev-toolkit-usage"
+version: 0.1.0
+abstract: "Typed yes/no/pick/rate decisions from a judgement model (TypeSafe Jev) next to a generative LLM, with a model/effort router for Claude Code."
+keywords: [llm, judge, routing, claude-code]

@@ -1,5 +1,12 @@
 # Jev-toolkit-usage
 
+[![tests](https://github.com/Wrenik/Jev-toolkit-usage/actions/workflows/tests.yml/badge.svg)](https://github.com/Wrenik/Jev-toolkit-usage/actions/workflows/tests.yml)
+![python](https://img.shields.io/badge/python-3.11%2B-blue)
+![status](https://img.shields.io/badge/status-alpha-orange)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+(The badges start working once the repository is public.)
+
 Small tools that put a **judgement model** next to a generative LLM. The LLM writes; the judgement model answers typed questions (yes/no, pick one, rate on a scale) with probabilities; ordinary code acts on those answers. The first judge supported is [TypeSafe Jev](https://docs.typesafe.ai).
 
 This repository is the **base** of a family of Jev tools: the judge layer (`jev_core`) and the first tool built on it, a model/effort router for Claude Code (`jev_router` + the `jev-router` mod). The other tools live in sibling repositories and depend on this one:
@@ -20,6 +27,43 @@ This repository is the **base** of a family of Jev tools: the judge layer (`jev_
 This is a personal learning project, built by an IT student (security now, data science next) to find out how a *judgement model* behaves when you put it next to a generative LLM. It is an experiment: I wanted to work out for myself where a model that returns typed answers with probabilities is useful, what breaks, and what it costs. Much of the code was written together with Claude Code, and the [bug report](docs/BUG_REPORT_2026-10-30.md) shows the mistakes found along the way, not only the result.
 
 **None of the ideas here are original.** Model routing, typed outputs and LLM judges all exist already; see [Prior art](#prior-art). Mature tools such as RouteLLM, LiteLLM and Instructor are better choices if you need something reliable. What this repo offers is a small, readable, tested experiment with a swappable judge, and honest notes on what worked.
+
+## Quick start (about 5 minutes, no API key needed)
+
+Works the same on Windows, macOS and Linux; you need Python 3.11 or newer and git.
+
+```bash
+git clone https://github.com/Wrenik/Jev-toolkit-usage.git     # or use your local copy
+cd Jev-toolkit-usage
+python -m venv .venv
+.venv/Scripts/python -m pip install -e ".[dev]"                  # Windows; macOS/Linux: .venv/bin/python
+.venv/Scripts/python -m jev_router demo                          # offline demo
+.venv/Scripts/python -m pytest                                   # offline tests
+```
+
+The demo uses canned judge answers (no network) and prints what the router would choose for five sample prompts:
+
+```
+> Rename the variable cnt to count in utils.py.
+  -> light    haiku / effort low   (small mechanical task)
+> yes, go ahead
+  -> standard sonnet / effort medium   (ordinary task)
+> Add a --verbose flag to the CLI and document it.
+  -> standard sonnet / effort high   (ordinary task)
+> Find why the nightly sync loses rows only on Mondays; the cause is unknown.
+  -> heavy    opus / effort high   (complex coding work: Opus rather than staying on Sonnet)
+> Delete all rows older than a year from the production database.
+  -> heavy    opus / effort high   (high risk)
+```
+
+To use the real judge, put your TypeSafe key in `~/.jev-toolkit/.env` (copy `.env.example`) and run
+`python -m jev_core check` (setup report, no network, never prints the key) then `python -m jev_core smoke` (one real call).
+`JEV_JUDGE=fake` makes every command run offline with a neutral fake judge.
+
+**Troubleshooting.** `python -m jev_core check` is the first thing to run; it says what is missing. If `pip` hangs while
+downloading, your network probably has a broken IPv6 route: retry with `pip install --timeout 30 --retries 5 ...`
+or switch IPv6 off for the install. If the mod says the router is unreachable, start the server by hand
+(`python -m jev_router serve`) and read its message; "cannot listen" means another copy already runs on port 8765.
 
 ## Status
 
@@ -76,7 +120,7 @@ python -m jev_core smoke      # one real Jev call, a fraction of a cent
 python -m pytest              # offline tests, no key needed
 ```
 
-No key? Set `JEV_JUDGE=fake` and everything runs offline with a neutral fake judge (`check` then reports the key as missing, which is expected).
+No key? Set `JEV_JUDGE=fake` and everything runs offline with a neutral fake judge (`check` then reports `OK (offline fake judge)`; `python -m jev_router demo` needs no key at all).
 
 ## Install the Claude Code mod (`jev-router`)
 
@@ -118,7 +162,8 @@ src/jev_core/    types.py judge.py jev.py (the only module that talks to TypeSaf
                  redact.py config.py (settings and data location) localserver.py (guarded local HTTP base) joint.py
 src/jev_router/  the router policy and its local server
 claude-mod/jev-router/   the Claude Code mod (TypeScript)
-docs/            DESIGN.md, ROADMAP.md, BUG_REPORT_2026-10-30.md
+docs/            DESIGN.md, ROADMAP.md, BUG_REPORT_2026-10-30.md, RELEASE_NOTES_v0.1.0.md
+CHANGELOG.md, CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md, CITATION.cff
 tests/           offline tests
 ```
 
