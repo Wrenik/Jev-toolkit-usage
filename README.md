@@ -122,6 +122,29 @@ python -m pytest              # offline tests, no key needed
 
 No key? Set `JEV_JUDGE=fake` and everything runs offline with a neutral fake judge (`check` then reports `OK (offline fake judge)`; `python -m jev_router demo` needs no key at all).
 
+### Using a different judge
+
+`JEV_JUDGE` picks the judge: `jev` (default), `fake`, `some.module:factory`, or the name of an entry point in the `jev_core.judges` group. The factory takes no arguments, reads its own settings from the environment and returns an object with `name`, `model` and `ask(state, questions) -> Verdict` (see `jev_core.judge.Judge`). Raise `JudgeUnavailable` for transient failures, `JudgeConfigError` for permanent ones. Caching and logging are wrapped around it automatically. Stub for a local model (docs only, no dependency added):
+
+```python
+# my_local_judge.py   ->   JEV_JUDGE=my_local_judge:make
+import os
+from jev_core.judge import JudgeUnavailable
+from jev_core.types import YesNo, YesNoAnswer, Verdict
+
+class LocalJudge:
+    name, model = "local", os.environ.get("LOCAL_MODEL", "my-model")
+    def ask(self, state, questions):
+        # call your local/EU model here; map its output to one Answer per question
+        answers = {k: YesNoAnswer(p_yes=0.5) for k, q in questions.items() if isinstance(q, YesNo)}
+        return Verdict(answers=answers, model=self.model, input_tokens=0, latency_ms=0)
+
+def make():
+    return LocalJudge()
+```
+
+Or register it for installs: `[project.entry-points."jev_core.judges"]` `local = "my_local_judge:make"`, then `JEV_JUDGE=local`. Background and sources: [docs/PRIOR_ART.md](docs/PRIOR_ART.md).
+
 ## Install the Claude Code mod (`jev-router`)
 
 The mod needs Claude Code with mod support (a recent version; check with `claude plugin --help`) and `python` on your PATH with this package installed (`pip install` as above, into the Python that `python` runs; set `JEV_PYTHON` or the mod's `python` option to use another interpreter, e.g. `python3`). The mod starts `python -m jev_router serve` itself; it needs no path to a checkout.

@@ -103,10 +103,46 @@ def load_env(path: Path | None = None) -> dict[str, str]:
     return values
 
 
+JUDGE_ENTRY_POINT_GROUP = "jev_core.judges"
+
+
+def load_plugin_judge(spec: str) -> Judge:
+    """Build a third-party judge named by JEV_JUDGE.
+
+    `spec` is either ``module:factory`` (imported directly) or the name of an entry point in the
+    ``jev_core.judges`` group (declared by the plugin's own pyproject). The factory is called with no
+    arguments and must return an object satisfying the `Judge` protocol; it reads its own settings from the
+    environment. Any failure is a `JudgeConfigError` (retrying will not help).
+    """
+    import importlib
+    from importlib import metadata
+
+    try:
+        if ":" in spec:
+            module_name, _, attr = spec.partition(":")
+            factory = getattr(importlib.import_module(module_name), attr)
+        else:
+            matches = [ep for ep in metadata.entry_points(group=JUDGE_ENTRY_POINT_GROUP) if ep.name == spec]
+            if not matches:
+                raise JudgeConfigError(
+                    f"unknown JEV_JUDGE {spec!r}; use 'jev', 'fake', 'module:factory' or an entry point "
+                    f"in group {JUDGE_ENTRY_POINT_GROUP!r}"
+                )
+            factory = matches[0].load()
+        judge = factory()
+    except JudgeConfigError:
+        raise
+    except Exception as exc:  # import errors, missing attribute, factory raising
+        raise JudgeConfigError(f"could not load judge {spec!r}: {type(exc).__name__}: {exc}") from exc
+    if not isinstance(judge, Judge):
+        raise JudgeConfigError(f"judge {spec!r} does not satisfy the Judge protocol (name, model, ask)")
+    return judge
+
+
 def default_judge(
     var_dir: str | Path | None = None, tag: str | None = None, timeout: float | None = None, max_retries: int | None = None
 ) -> Judge:
-    """Logging(Caching(real judge)), chosen by JEV_JUDGE: "jev" (default) or "fake".
+    """Logging(Caching(real judge)), chosen by JEV_JUDGE: "jev" (default), "fake", ``module:factory`` or a ``jev_core.judges`` entry point.
 
     `var_dir` defaults to ``var_path()``. `timeout` (seconds per attempt) and `max_retries` override the
     Jev adapter defaults (10 s, 1 retry, i.e. up to ~20 s): interactive callers such as the router want a
@@ -131,6 +167,6 @@ def default_judge(
             extra["max_retries"] = max_retries
         inner = JevJudge(api_key=key, model=env.get("JEV_MODEL") or DEFAULT_MODEL, **extra)
     else:
-        raise JudgeConfigError(f"unknown JEV_JUDGE {kind!r}; use 'jev' or 'fake'")
+        inner = load_plugin_judge(kind)
     var = Path(var_dir) if var_dir is not None else var_path()
     return LoggingJudge(CachingJudge(inner, var / "judge-cache.sqlite"), var / "judge-log.jsonl", tag=tag)
