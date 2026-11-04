@@ -37,10 +37,14 @@ def neutral(q: Question) -> Answer:
         return YesNoAnswer(p_yes=0.5)
     if isinstance(q, Pick):
         names = list(q.options)
+        if not names:
+            raise ValueError("Pick question has no options")
         p = 1 / len(names)
         return PickAnswer(choice=names[0], confidence=p, probabilities={n: p for n in names})
     if isinstance(q, Rate):
         levels = list(q.levels)
+        if not levels:
+            raise ValueError("Rate question has no levels")
         p = 1 / len(levels)
         mid = (len(levels) - 1) / 2
         return RateAnswer(score=mid, level=levels[round(mid)], confidence=p, probabilities={lv: p for lv in levels})

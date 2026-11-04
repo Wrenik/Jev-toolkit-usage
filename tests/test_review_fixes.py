@@ -119,3 +119,21 @@ def test_router_demo_runs_offline(capsys):
     assert router_main.main(["demo"]) == 0
     out = capsys.readouterr().out
     assert "light" in out and "heavy" in out
+
+
+def test_redacts_npm_token_basic_auth_arg_and_fullwidth_email():
+    from jev_core.redact import redact, redact_personal
+
+    assert redact("npm_" + "a" * 36)[1] == ["npm_token"]
+    assert "hunter22" not in redact("curl -u admin:hunter22 https://x.example")[0]
+    assert "ls -u foo" == redact("ls -u foo")[0]
+    assert redact_personal("mail ａｄｍｉｎ＠ｅｘａｍｐｌｅ．ｃｏｍ")[1] == ["email"]
+
+
+def test_fake_judge_rejects_empty_pick_options():
+    import pytest
+    from jev_core import Pick
+    from jev_core.fake import neutral
+
+    with pytest.raises(ValueError):
+        neutral(Pick("x?", {}))

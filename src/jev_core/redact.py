@@ -8,6 +8,7 @@ misses is still sent to the judge. The kinds found are logged, never the values.
 from __future__ import annotations
 
 import re
+import unicodedata
 
 # (kind, pattern). Order matters: specific formats before the generic ones.
 _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
@@ -15,10 +16,12 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("anthropic_key", re.compile(r"\bsk-ant-[A-Za-z0-9_-]{16,}")),
     ("openai_key", re.compile(r"\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}")),
     ("github_token", re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})")),
+    ("npm_token", re.compile(r"\bnpm_[A-Za-z0-9]{30,}")),
     ("aws_key_id", re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b")),
     ("slack_token", re.compile(r"\bxox[abposr]-[A-Za-z0-9-]{10,}")),
     ("google_key", re.compile(r"\bAIza[0-9A-Za-z_-]{30,}")),
     ("stripe_key", re.compile(r"\b(?:[sr]k|whsec)_(?:live_|test_)?[A-Za-z0-9]{16,}")),
+    ("basic_auth_arg", re.compile(r"(?i)(?<=\s)(?:-u|--user)[ =]+['\"]?[^\s:'\"]+:[^\s'\"]{3,}")),
     ("jwt", re.compile(r"\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}")),
     ("cookie", re.compile(r"(?i)\b((?:set-)?cookie\s*:\s*)[^\r\n]+")),
     ("bearer_token", re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{20,}")),
@@ -39,6 +42,8 @@ _MARKERS: dict[str, tuple[str, ...]] = {
     "anthropic_key": ("sk-ant-",),
     "openai_key": ("sk-",),
     "github_token": ("ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_"),
+    "npm_token": ("npm_",),
+    "basic_auth_arg": ("-u", "--user"),
     "aws_key_id": ("akia", "asia"),
     "slack_token": ("xox",),
     "google_key": ("aiza",),
@@ -93,6 +98,7 @@ _PERSONAL: list[tuple[str, re.Pattern[str]]] = [
 def redact_personal(text: str) -> tuple[str, list[str]]:
     """`redact` plus e-mail addresses and home-directory user names. Phone numbers are NOT detected."""
     text, found = redact(text)
+    text = unicodedata.normalize("NFKC", text)  # fullwidth look-alikes of "@" and letters
     for kind, pattern in _PERSONAL:
         def replace(m: re.Match[str], kind: str = kind) -> str:
             found.append(kind)
