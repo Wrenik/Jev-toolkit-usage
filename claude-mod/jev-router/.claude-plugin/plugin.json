@@ -1,0 +1,15 @@
+{
+  "name": "jev-router",
+  "version": "0.3.0",
+  "description": "Asks a judgement model (TypeSafe Jev) how big each prompt is and picks the Claude model and effort for it.",
+  "author": { "name": "Henric" },
+  "license": "MIT",
+  "userConfig": {
+    "python": {
+      "type": "string",
+      "title": "Python for the server",
+      "description": "Command or path of the Python that has jev-toolkit-usage installed. Empty: JEV_PYTHON, else `python` (Windows) or `python3` on PATH.",
+      "default": ""
+    }
+  }
+}
