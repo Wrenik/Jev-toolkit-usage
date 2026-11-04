@@ -78,7 +78,7 @@ def _parse(path: Path) -> dict[str, str]:
         if not line or line.startswith("#") or "=" not in line:
             continue
         if line.startswith("export "):  # `export KEY=value` is a common shell-style .env line
-            line = line[len("export "):].lstrip()
+            line = line[len("export ") :].lstrip()
         key, _, value = line.partition("=")
         value = value.strip()
         if value[:1] in ("'", '"') and value.count(value[0]) >= 2:
@@ -140,7 +140,10 @@ def load_plugin_judge(spec: str) -> Judge:
 
 
 def default_judge(
-    var_dir: str | Path | None = None, tag: str | None = None, timeout: float | None = None, max_retries: int | None = None
+    var_dir: str | Path | None = None,
+    tag: str | None = None,
+    timeout: float | None = None,
+    max_retries: int | None = None,
 ) -> Judge:
     """Logging(Caching(real judge)), chosen by JEV_JUDGE: "jev" (default), "fake", ``module:factory`` or a ``jev_core.judges`` entry point.
 

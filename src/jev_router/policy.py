@@ -45,8 +45,7 @@ QUESTIONS: dict[str, Question] = {
         "(not only to explain something or look something up)?"
     ),
     "multi_file": YesNo(
-        "Would doing this well involve understanding or changing several files, "
-        "components or systems that interact?"
+        "Would doing this well involve understanding or changing several files, components or systems that interact?"
     ),
     "risk": Pick(
         "If this request is done carelessly, how bad is the damage?",

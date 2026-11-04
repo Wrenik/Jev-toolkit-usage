@@ -81,8 +81,16 @@ def handle_route(judge: Judge, body: dict[str, Any], log_path: Path) -> dict[str
         if forced in TIERS:
             # The user typed !light / !standard / !heavy: no judge call.
             target = DEFAULT_TIER_MODELS[forced]
-            result = {"ok": True, "tier": forced, **target, "reason": "forced by user", "signals": {},
-                      "judge_ms": 0, "cached": False, "cost_usd": 0.0}
+            result = {
+                "ok": True,
+                "tier": forced,
+                **target,
+                "reason": "forced by user",
+                "signals": {},
+                "judge_ms": 0,
+                "cached": False,
+                "cost_usd": 0.0,
+            }
         else:
             decision, verdict = route(
                 judge,
@@ -92,8 +100,13 @@ def handle_route(judge: Judge, body: dict[str, Any], log_path: Path) -> dict[str
                 context_tokens=_int(body.get("context_tokens")),
                 idle_ms=_int(body.get("idle_ms")),
             )
-            result = {"ok": True, **decision.to_dict(), "judge_ms": verdict.latency_ms,
-                      "cached": verdict.cached, "cost_usd": verdict.cost_usd}
+            result = {
+                "ok": True,
+                **decision.to_dict(),
+                "judge_ms": verdict.latency_ms,
+                "cached": verdict.cached,
+                "cost_usd": verdict.cost_usd,
+            }
     except JudgeError as err:
         # Fail open: the mod leaves the session as it is.
         result = {"ok": False, "error": f"{type(err).__name__}: {err}"}
@@ -119,8 +132,16 @@ def make_handler(judge: Judge, log_path: Path) -> type[BaseHTTPRequestHandler]:
                 self._send(404, {"ok": False})
             elif self._allowed():
                 current = code_version()
-                self._send(200, {"ok": True, "judge": judge.name, "model": judge.model,
-                                 "code_version": started_version, "stale": current != started_version})
+                self._send(
+                    200,
+                    {
+                        "ok": True,
+                        "judge": judge.name,
+                        "model": judge.model,
+                        "code_version": started_version,
+                        "stale": current != started_version,
+                    },
+                )
 
         def do_POST(self) -> None:  # noqa: N802
             raw = self._read_body()
@@ -143,7 +164,6 @@ def make_handler(judge: Judge, log_path: Path) -> type[BaseHTTPRequestHandler]:
                 return
             self._send(200, handle_route(judge, body, log_path))
 
-
     return Handler
 
 
@@ -155,6 +175,8 @@ def serve(port: int = DEFAULT_PORT, var_dir: str | Path | None = None) -> None:
     log_path = Path(var_dir) / "router-log.jsonl"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(judge, log_path))
-    print(f"jev_router listening on 127.0.0.1:{port} (judge={judge.name}, model={judge.model}, "
-          f"code {code_version()})", flush=True)
+    print(
+        f"jev_router listening on 127.0.0.1:{port} (judge={judge.name}, model={judge.model}, code {code_version()})",
+        flush=True,
+    )
     server.serve_forever()

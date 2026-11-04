@@ -28,11 +28,19 @@ DOC_RESPONSE = {
     "model": "jev-1.14.0",
     "answers": {
         "bug": {"type": "noul", "noul": 0.97},
-        "area": {"type": "choice", "choice": "app", "confidence": 0.85,
-                 "probabilities": {"billing": 0.03, "account": 0.12, "app": 0.85}},
-        "severity": {"type": "score", "score": 1.65, "confidence": 0.8,
-                     "legend": {"0": "cosmetic", "1": "inconvenient", "2": "blocking"},
-                     "probabilities": {"0": 0.05, "1": 0.25, "2": 0.7}},
+        "area": {
+            "type": "choice",
+            "choice": "app",
+            "confidence": 0.85,
+            "probabilities": {"billing": 0.03, "account": 0.12, "app": 0.85},
+        },
+        "severity": {
+            "type": "score",
+            "score": 1.65,
+            "confidence": 0.8,
+            "legend": {"0": "cosmetic", "1": "inconvenient", "2": "blocking"},
+            "probabilities": {"0": 0.05, "1": 0.25, "2": 0.7},
+        },
     },
     "usage": {"input_tokens": 140, "output_tokens": 20},
 }

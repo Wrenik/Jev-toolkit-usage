@@ -1,14 +1,15 @@
 {
   "name": "jev-toolkit-usage",
-  "description": "Claude Code mods built on a judgement model (TypeSafe Jev): the model/effort router.",
+  "description": "Claude Code mod built on a judgement model (currently TypeSafe Jev): the model/effort router.",
   "owner": {
-    "name": "Henric"
+    "name": "AUTHOR_NAME_TODO"
   },
   "plugins": [
     {
       "name": "jev-router",
       "source": "./claude-mod/jev-router",
-      "description": "Asks a judgement model (TypeSafe Jev) how big each prompt is and picks the Claude model and effort for it. Needs the jev-toolkit-usage Python package installed."
+      "description": "Asks a judgement model (TypeSafe Jev) how big each prompt is and picks the Claude model and effort for it. Needs the jev-toolkit-usage Python package installed.",
+      "version": "0.1.0"
     }
   ]
 }

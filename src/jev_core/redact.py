@@ -27,10 +27,13 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("bearer_token", re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{20,}")),
     ("url_password", re.compile(r"(?i)\b[a-z][a-z0-9+.-]*://[^\s:/@]+:[^\s@/]+@")),
     # KEY=value / "password": "value" for obvious secret names (env files, JSON, YAML).
-    ("assignment", re.compile(
-        r"(?i)\b([A-Z0-9_]*(?:api[_-]?key|secret|token|passw(?:or)?d|pwd|private[_-]?key|access[_-]?key)[A-Z0-9_]*)"
-        r"([\"']?\s*[:=]\s*[\"']?)(?!\[REDACTED)([^\s\"',;]{6,})"
-    )),
+    (
+        "assignment",
+        re.compile(
+            r"(?i)\b([A-Z0-9_]*(?:api[_-]?key|secret|token|passw(?:or)?d|pwd|private[_-]?key|access[_-]?key)[A-Z0-9_]*)"
+            r"([\"']?\s*[:=]\s*[\"']?)(?!\[REDACTED)([^\s\"',;]{6,})"
+        ),
+    ),
 ]
 
 
@@ -65,6 +68,7 @@ def redact(text: str, gated: bool = True) -> tuple[str, list[str]]:
             if not any(m in low for m in _MARKERS[kind]):
                 continue
         if kind == "cookie":
+
             def keep_header(m: re.Match[str]) -> str:
                 found.append(kind)
                 return f"{m.group(1)}[REDACTED:cookie]"
@@ -72,6 +76,7 @@ def redact(text: str, gated: bool = True) -> tuple[str, list[str]]:
             text = pattern.sub(keep_header, text)
             continue
         if kind == "assignment":
+
             def keep_name(m: re.Match[str]) -> str:
                 found.append(kind)
                 return f"{m.group(1)}{m.group(2)}[REDACTED:secret]"
@@ -100,6 +105,7 @@ def redact_personal(text: str) -> tuple[str, list[str]]:
     text, found = redact(text)
     text = unicodedata.normalize("NFKC", text)  # fullwidth look-alikes of "@" and letters
     for kind, pattern in _PERSONAL:
+
         def replace(m: re.Match[str], kind: str = kind) -> str:
             found.append(kind)
             return f"[REDACTED:{kind}]"

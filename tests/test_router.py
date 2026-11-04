@@ -11,9 +11,19 @@ from jev_router import choose_tier, route
 from jev_router.server import HEADER, clip, make_handler
 
 
-def signals(complexity=1.5, conf=0.9, deep=0.1, mechanical=0.3, followup=0.1, risk_high=0.0, coding=0.0, multi_file=0.0):
-    return {"complexity": complexity, "complexity_conf": conf, "deep": deep, "mechanical": mechanical,
-            "followup": followup, "risk_high": risk_high, "coding": coding, "multi_file": multi_file}
+def signals(
+    complexity=1.5, conf=0.9, deep=0.1, mechanical=0.3, followup=0.1, risk_high=0.0, coding=0.0, multi_file=0.0
+):
+    return {
+        "complexity": complexity,
+        "complexity_conf": conf,
+        "deep": deep,
+        "mechanical": mechanical,
+        "followup": followup,
+        "risk_high": risk_high,
+        "coding": coding,
+        "multi_file": multi_file,
+    }
 
 
 @pytest.mark.parametrize(
@@ -66,63 +76,103 @@ COLD = 70 * 60 * 1000  # idle 70 min
 
 
 def test_no_step_down_with_big_warm_context():
-    decision, _ = route(FakeJudge(light_responder), "rename cnt", "standard",
-                        current_model="claude-sonnet-5-5", context_tokens=BIG, idle_ms=WARM)
+    decision, _ = route(
+        FakeJudge(light_responder),
+        "rename cnt",
+        "standard",
+        current_model="claude-sonnet-5-5",
+        context_tokens=BIG,
+        idle_ms=WARM,
+    )
     assert decision.tier == "standard" and "forfeit a warm cache" in decision.reason
 
 
 def test_step_down_allowed_when_cache_cold_or_context_small():
     for tokens, idle in [(60_000, COLD), (5_000, WARM), (None, None)]:
-        decision, _ = route(FakeJudge(light_responder), "rename cnt", "standard",
-                            current_model="claude-sonnet-5-5", context_tokens=tokens, idle_ms=idle)
+        decision, _ = route(
+            FakeJudge(light_responder),
+            "rename cnt",
+            "standard",
+            current_model="claude-sonnet-5-5",
+            context_tokens=tokens,
+            idle_ms=idle,
+        )
         assert decision.tier == "light", (tokens, idle)
 
 
 def test_step_up_always_allowed():
     def heavy(state, questions):
-        return {"complexity": RateAnswer(3.5, "large", 0.9, {}), "mechanical": YesNoAnswer(0.1),
-                "risk": PickAnswer("low", 0.9, {"none": 0.1, "low": 0.9, "high": 0.0})}
+        return {
+            "complexity": RateAnswer(3.5, "large", 0.9, {}),
+            "mechanical": YesNoAnswer(0.1),
+            "risk": PickAnswer("low", 0.9, {"none": 0.1, "low": 0.9, "high": 0.0}),
+        }
 
-    decision, _ = route(FakeJudge(heavy), "design a system", "light",
-                        current_model="claude-haiku-5-5", context_tokens=BIG, idle_ms=WARM)
+    decision, _ = route(
+        FakeJudge(heavy), "design a system", "light", current_model="claude-haiku-5-5", context_tokens=BIG, idle_ms=WARM
+    )
     assert decision.tier == "heavy"
 
 
 def test_effort_is_high_for_sonnet_doing_real_coding():
     def coding(state, questions):
-        return {"complexity": RateAnswer(1.2, "small", 0.9, {}), "coding": YesNoAnswer(0.9),
-                "mechanical": YesNoAnswer(0.2),
-                "risk": PickAnswer("low", 0.9, {"none": 0.1, "low": 0.9, "high": 0.0})}
+        return {
+            "complexity": RateAnswer(1.2, "small", 0.9, {}),
+            "coding": YesNoAnswer(0.9),
+            "mechanical": YesNoAnswer(0.2),
+            "risk": PickAnswer("low", 0.9, {"none": 0.1, "low": 0.9, "high": 0.0}),
+        }
 
     decision, _ = route(FakeJudge(coding), "fix the flaky retry in client.py")
     assert (decision.tier, decision.model, decision.effort) == ("standard", "sonnet", "high")
 
 
-@pytest.mark.parametrize("model, tier", [
-    ("claude-haiku-5-5", "light"), ("claude-sonnet-5-5", "standard"), ("claude-opus-5-5", "heavy"),
-    ("sonnet", "standard"), ("claude-opus-5", "heavy"),
-    ("claude-fable-5-1", None), ("fable", None), ("best", None), ("opusplan", None),
-    ("claude-opus-5-5[1m]", None), ("sonnet[1m]", None), ("", None), (None, None),
-])
+@pytest.mark.parametrize(
+    "model, tier",
+    [
+        ("claude-haiku-5-5", "light"),
+        ("claude-sonnet-5-5", "standard"),
+        ("claude-opus-5-5", "heavy"),
+        ("sonnet", "standard"),
+        ("claude-opus-5", "heavy"),
+        ("claude-fable-5-1", None),
+        ("fable", None),
+        ("best", None),
+        ("opusplan", None),
+        ("claude-opus-5-5[1m]", None),
+        ("sonnet[1m]", None),
+        ("", None),
+        (None, None),
+    ],
+)
 def test_tier_of_model_is_strict(model, tier):
     from jev_router.policy import tier_of_model
+
     assert tier_of_model(model) == tier
 
 
 def test_unmanaged_model_is_suggestion_only():
     for model in ("claude-fable-5-1", "opusplan", "claude-opus-5-5[1m]"):
-        decision, _ = route(FakeJudge(light_responder), "rename", None,
-                            current_model=model, context_tokens=BIG, idle_ms=WARM)
+        decision, _ = route(
+            FakeJudge(light_responder), "rename", None, current_model=model, context_tokens=BIG, idle_ms=WARM
+        )
         assert decision.manages_current is False, model
         assert "suggestion only" in decision.reason
 
 
 def test_no_haiku_above_100k_even_with_cold_cache():
-    decision, _ = route(FakeJudge(light_responder), "rename", None,
-                        current_model="claude-sonnet-5-5", context_tokens=BIG, idle_ms=COLD)
+    decision, _ = route(
+        FakeJudge(light_responder), "rename", None, current_model="claude-sonnet-5-5", context_tokens=BIG, idle_ms=COLD
+    )
     assert decision.tier == "standard" and "no Haiku above 100k" in decision.reason
-    decision, _ = route(FakeJudge(light_responder), "rename", None,
-                        current_model="claude-sonnet-5-5", context_tokens=60_000, idle_ms=COLD)
+    decision, _ = route(
+        FakeJudge(light_responder),
+        "rename",
+        None,
+        current_model="claude-sonnet-5-5",
+        context_tokens=60_000,
+        idle_ms=COLD,
+    )
     assert decision.tier == "light"
 
 
@@ -189,6 +239,7 @@ def test_server_rejects_requests_without_header(server):
 
 
 # --- Bug report fixes (docs/BUG_REPORT_2026-10-30.md) ---
+
 
 def raw_request(url, data: bytes, headers: dict):
     import socket
@@ -260,16 +311,19 @@ def test_h2_secrets_never_reach_the_judge(server, tmp_path):
     assert '"anthropic_key"' in log and secret not in log
 
 
-@pytest.mark.parametrize("text, kind", [
-    ("-----BEGIN RSA PRIVATE KEY-----\nMIIabc\n-----END RSA PRIVATE KEY-----", "private_key"),
-    ("ghp_" + "a" * 36, "github_token"),
-    ("AKIAABCDEFGHIJKLMNOP", "aws_key_id"),
-    ("Authorization: Bearer abcdefghijklmnopqrstuvwxyz123", "bearer_token"),
-    ("postgres://admin:s3cretpass@db.local/app", "url_password"),
-    ("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTYifQ.abcdefghijklmnop", "jwt"),
-    ('{"api_key": "abcdef123456"}', "assignment"),
-    ("OPENAI_API_KEY=sk-proj-abcdefghijklmnopqrstuvwxyz", "openai_key"),
-])
+@pytest.mark.parametrize(
+    "text, kind",
+    [
+        ("-----BEGIN RSA PRIVATE KEY-----\nMIIabc\n-----END RSA PRIVATE KEY-----", "private_key"),
+        ("ghp_" + "a" * 36, "github_token"),
+        ("AKIAABCDEFGHIJKLMNOP", "aws_key_id"),
+        ("Authorization: Bearer abcdefghijklmnopqrstuvwxyz123", "bearer_token"),
+        ("postgres://admin:s3cretpass@db.local/app", "url_password"),
+        ("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTYifQ.abcdefghijklmnop", "jwt"),
+        ('{"api_key": "abcdef123456"}', "assignment"),
+        ("OPENAI_API_KEY=sk-proj-abcdefghijklmnopqrstuvwxyz", "openai_key"),
+    ],
+)
 def test_redact_catches_common_formats(text, kind):
     from jev_router.redact import redact
 
@@ -280,6 +334,10 @@ def test_redact_catches_common_formats(text, kind):
 def test_redact_leaves_ordinary_prompts_alone():
     from jev_router.redact import redact
 
-    for text in ["fix the token parser in lexer.py", "rename password_hint to hint", "what is a secret santa?",
-                 "set timeout = 30 in config"]:
+    for text in [
+        "fix the token parser in lexer.py",
+        "rename password_hint to hint",
+        "what is a secret santa?",
+        "set timeout = 30 in config",
+    ]:
         assert redact(text) == (text, [])

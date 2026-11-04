@@ -49,10 +49,13 @@ def ask_together(judge: Judge, parts: Mapping[str, tuple[State, Mapping[str, Que
     out: dict[str, Verdict] = {}
     for i, tool in enumerate(tools):
         prefix = tool + SEP
-        answers = {k[len(prefix):]: a for k, a in joint.answers.items() if k.startswith(prefix)}
+        answers = {k[len(prefix) :]: a for k, a in joint.answers.items() if k.startswith(prefix)}
         out[tool] = Verdict(
-            answers=answers, model=joint.model, input_tokens=joint.input_tokens if i == 0 else 0,
-            latency_ms=joint.latency_ms, cached=joint.cached,
+            answers=answers,
+            model=joint.model,
+            input_tokens=joint.input_tokens if i == 0 else 0,
+            latency_ms=joint.latency_ms,
+            cached=joint.cached,
             extra={**dict(joint.extra), "joint_with": [t for t in tools if t != tool]},
         )
     return out

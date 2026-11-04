@@ -15,7 +15,9 @@ from .types import Pick, Question, Rate, YesNo
 SMOKE_STATE = "Rename the variable `cnt` to `count` in utils.py."
 SMOKE_QUESTIONS: dict[str, Question] = {
     "mechanical": YesNo("Is this a small mechanical code edit with no design decisions?"),
-    "risk": Pick("What is the risk of this request?", {"none": None, "low": None, "high": "could delete data or break things"}),
+    "risk": Pick(
+        "What is the risk of this request?", {"none": None, "low": None, "high": "could delete data or break things"}
+    ),
     "complexity": Rate("How complex is this task?", ["trivial", "small", "medium", "large", "very large"]),
 }
 
@@ -39,8 +41,10 @@ def main(argv: list[str]) -> int:
         has_key = bool(env.get("TYPESAFE_API_KEY"))
         print(f"TYPESAFE_API_KEY: {'set' if has_key else 'MISSING'}")
         if kind == "jev" and not has_key:
-            print(f"-> No key: put TYPESAFE_API_KEY=... in {find_env_file() or home() / '.env'} (copy .env.example), "
-                  "or set JEV_JUDGE=fake to run offline.")
+            print(
+                f"-> No key: put TYPESAFE_API_KEY=... in {find_env_file() or home() / '.env'} (copy .env.example), "
+                "or set JEV_JUDGE=fake to run offline."
+            )
             return 1
         if kind not in ("jev", "fake"):
             print(f"-> Unknown JEV_JUDGE {kind!r}; use 'jev' or 'fake'.")
@@ -53,8 +57,10 @@ def main(argv: list[str]) -> int:
         except JudgeError as err:
             print(f"FAILED: {err}")
             return 1
-        print(f"model={verdict.model} tokens={verdict.input_tokens} cost=${verdict.cost_usd:.8f} "
-              f"latency={verdict.latency_ms}ms cached={verdict.cached}")
+        print(
+            f"model={verdict.model} tokens={verdict.input_tokens} cost=${verdict.cost_usd:.8f} "
+            f"latency={verdict.latency_ms}ms cached={verdict.cached}"
+        )
         for name, answer in verdict.answers.items():
             print(f"  {name}: {answer}")
         return 0
