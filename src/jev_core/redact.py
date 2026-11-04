@@ -21,7 +21,7 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("slack_token", re.compile(r"\bxox[abposr]-[A-Za-z0-9-]{10,}")),
     ("google_key", re.compile(r"\bAIza[0-9A-Za-z_-]{30,}")),
     ("stripe_key", re.compile(r"\b(?:[sr]k|whsec)_(?:live_|test_)?[A-Za-z0-9]{16,}")),
-    ("basic_auth_arg", re.compile(r"(?i)(?<=\s)(?:-u|--user)[ =]+['\"]?[^\s:'\"]+:[^\s'\"]{3,}")),
+    ("basic_auth_arg", re.compile(r"(?i)(?<=\s)(?:-u|--user)[ =]+['\"]?[^\s:'\"]+:(?!//)[^\s'\"]{3,}")),
     ("jwt", re.compile(r"\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}")),
     ("cookie", re.compile(r"(?i)\b((?:set-)?cookie\s*:\s*)[^\r\n]+")),
     ("bearer_token", re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{20,}")),

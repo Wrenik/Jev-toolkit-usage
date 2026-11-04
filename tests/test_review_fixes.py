@@ -137,3 +137,9 @@ def test_fake_judge_rejects_empty_pick_options():
 
     with pytest.raises(ValueError):
         neutral(Pick("x?", {}))
+
+
+def test_basic_auth_arg_ignores_urls():
+    from jev_core.redact import redact
+
+    assert redact("gobuster dir -u http://target.invalid -w x")[1] == []
