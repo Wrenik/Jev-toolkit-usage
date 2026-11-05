@@ -9,8 +9,20 @@ Request bodies are read in full and capped, so a refusal never resets the connec
 from __future__ import annotations
 
 import json
-from http.server import BaseHTTPRequestHandler
+import os
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
+
+
+class GuardedServer(ThreadingHTTPServer):
+    """Threading HTTP server that refuses to share its port.
+
+    The standard library sets SO_REUSEADDR, which on Windows lets a second process bind the same port as well:
+    two servers (say the router's and the context server) then listen side by side and requests reach either.
+    On Windows reuse is therefore switched off, so the second process fails to bind and the caller can take over.
+    """
+
+    allow_reuse_address = os.name != "nt"
 
 
 class GuardedHandler(BaseHTTPRequestHandler):

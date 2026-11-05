@@ -18,13 +18,13 @@ import hashlib
 import json
 import threading
 import time
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any
 
 from jev_core import Judge, JudgeError, default_judge
 from jev_core.config import var_path
-from jev_core.localserver import GuardedHandler
+from jev_core.localserver import GuardedHandler, GuardedServer
 
 from .policy import DEFAULT_TIER_MODELS, TIERS, route
 from .redact import redact
@@ -174,7 +174,7 @@ def serve(port: int = DEFAULT_PORT, var_dir: str | Path | None = None) -> None:
     judge = default_judge(var_dir=var_dir, tag="router", timeout=4.0, max_retries=0)
     log_path = Path(var_dir) / "router-log.jsonl"
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(judge, log_path))
+    server = GuardedServer(("127.0.0.1", port), make_handler(judge, log_path))
     print(
         f"jev_router listening on 127.0.0.1:{port} (judge={judge.name}, model={judge.model}, code {code_version()})",
         flush=True,
