@@ -5,8 +5,6 @@
 ![status](https://img.shields.io/badge/status-alpha-orange)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-(The badges start working once the repository is public.)
-
 Small tools that put a **judgement model** next to a generative LLM. The LLM writes; the judgement model answers typed questions (yes/no, pick one, rate on a scale) with probabilities; ordinary code acts on those answers. The first judge supported is [TypeSafe Jev](https://docs.typesafe.ai).
 
 This repository is the **base** of a family of Jev tools: the judge layer (`jev_core`) and the first tool built on it, a model/effort router for Claude Code (`jev_router` + the `jev-router` mod). The other tools live in sibling repositories and depend on this one (see [the family](#the-jev-toolkit-family)).
@@ -25,7 +23,7 @@ This repository is the **base** of a family of Jev tools: the judge layer (`jev_
 Requires Python 3.11+.
 
 ```bash
-pip install "git+https://github.com/Wrenik/Jev-toolkit-usage.git"     # once the repository is public
+pip install "git+https://github.com/Wrenik/Jev-toolkit-usage.git"
 # or, from a clone:
 python -m venv .venv
 .venv/Scripts/python -m pip install -e ".[dev]"                          # Windows; use .venv/bin/python elsewhere
@@ -224,7 +222,7 @@ Ideas this project is related to. No code from them is used.
 | [Jev-toolkit-FactCheck](https://github.com/Wrenik/Jev-toolkit-FactCheck) | fact checker with hover evidence | usage (Scanner optional) |
 | [Jev-toolkit-Sources](https://github.com/Wrenik/Jev-toolkit-Sources) | source restriction (allowlist policy) | usage, FactCheck |
 
-All six on one machine: [docs/INSTALL_ALL.md](https://github.com/Wrenik/Jev-toolkit-usage/blob/main/docs/INSTALL_ALL.md) (a script does it). The links work once the repositories are public.
+All six on one machine: [docs/INSTALL_ALL.md](https://github.com/Wrenik/Jev-toolkit-usage/blob/main/docs/INSTALL_ALL.md) (a script does it). The other tools (Scanner, Monitor, FactCheck, Sources) are published one by one; their links work as each goes public.
 
 ## Contributing, security, license
 
